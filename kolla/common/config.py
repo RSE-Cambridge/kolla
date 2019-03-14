@@ -1186,6 +1186,10 @@ USERS = {
     'cyborg-user': {
         'uid': 42483,
         'gid': 42483,
+    },
+    'caso-user': {
+        'uid': 42481,
+        'gid': 42481,
     }
 }
 
