@@ -1,0 +1,43 @@
+FROM {{ namespace }}/{{ image_prefix }}prometheus-base:{{ tag }}
+LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build_date }}"
+
+{% import "macros.j2" as macros with context %}
+
+{% block prometheus_dellhw_exporter_header %}{% endblock %}
+
+{% if base_distro in ['centos', 'oraclelinux', 'rhel'] %}
+    {% set prometheus_dellhw_exporter_packages = [
+        'go',
+        'make',
+    ] %}
+{% elif base_distro in ['debian', 'ubuntu'] %}
+    {% set prometheus_dellhw_exporter_packages = [
+        'golang-go',
+        'make',
+    ] %}
+{% endif %}
+
+{{ macros.install_packages(prometheus_dellhw_exporter_packages | customizable("packages")) }}
+
+{% block prometheus_dellhw_exporter_version %}
+ARG prometheus_dellhw_exporter_version=v1.3.5
+ARG prometheus_dellhw_exporter_url=https://github.com/galexrt/dellhw_exporter/archive/${prometheus_dellhw_exporter_version}.tar.gz
+{% endblock %}
+
+{% block prometheus_dellhw_exporter_install %}
+ENV GOPATH=/tmp
+RUN curl -sSL -o /tmp/dellhw_exporter.tar.gz ${prometheus_dellhw_exporter_url} \
+    && mkdir /tmp/dellhw_exporter \
+    && tar --strip 1 -xvf /tmp/dellhw_exporter.tar.gz -C /tmp/dellhw_exporter \
+    && cd /tmp/dellhw_exporter \
+    && find . -type f -print0 | xargs -0 sed -i 's/Sirupsen/sirupsen/g' \
+    && go get -d ./... \
+    && make build \
+    && install -m 0755 dellhw_exporter /opt/ \
+    && rm -rf /tmp/dellhw_exporter*
+{% endblock %}
+
+{% block prometheus_dellhw_exporter_footer %}{% endblock %}
+{% block footer %}{% endblock %}
+
+USER prometheus

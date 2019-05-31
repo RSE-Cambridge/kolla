@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Add a Prometheus exporter for Dell hardware components. Metrics such
+    as chassis battery level, fan speed, power consumption, temperature
+    and hardware status are reported.
