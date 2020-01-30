@@ -223,7 +223,7 @@ _CLI_OPTS = [
                      ' push properly')),
     cfg.IntOpt('retries', short='r', default=3, min=0,
                help='The number of times to retry while building'),
-    cfg.MultiOpt('regex', types.String(), positional=True,
+    cfg.MultiOpt('regex', types.String(), positional=True, required=False,
                  help=('Build only images matching regex and its'
                        ' dependencies')),
     cfg.StrOpt('registry',
@@ -331,7 +331,7 @@ SOURCES = {
     'cinder-base': {
         'type': 'url',
         'location': ('$tarballs_base/cinder/'
-                     'cinder-14.0.2.tar.gz')},
+                     'cinder-14.0.3.tar.gz')},
     'congress-base': {
         'type': 'url',
         'location': ('$tarballs_base/congress/'
@@ -370,7 +370,7 @@ SOURCES = {
     'glance-base': {
         'type': 'url',
         'location': ('$tarballs_base/glance/'
-                     'glance-18.0.0.tar.gz')},
+                     'glance-18.0.1.tar.gz')},
     'gnocchi-base': {
         'type': 'git',
         'reference': '4.3.2',
@@ -383,7 +383,7 @@ SOURCES = {
     'horizon': {
         'type': 'url',
         'location': ('$tarballs_base/horizon/'
-                     'horizon-15.1.1.tar.gz')},
+                     'horizon-15.2.0.tar.gz')},
     'horizon-plugin-blazar-dashboard': {
         'type': 'url',
         'location': ('$tarballs_base/blazar-dashboard/'
@@ -519,7 +519,7 @@ SOURCES = {
     'magnum-base': {
         'type': 'url',
         'location': ('$tarballs_base/magnum/'
-                     'magnum-8.1.0.tar.gz')},
+                     'magnum-8.2.0.tar.gz')},
     'manila-base': {
         'type': 'url',
         'location': ('$tarballs_base/manila/'
@@ -572,11 +572,11 @@ SOURCES = {
     'neutron-base': {
         'type': 'url',
         'location': ('$tarballs_base/neutron/'
-                     'neutron-14.0.3.tar.gz')},
+                     'neutron-14.0.4.tar.gz')},
     'neutron-base-plugin-neutron-fwaas': {
         'type': 'url',
         'location': ('$tarballs_base/neutron-fwaas/'
-                     'neutron-fwaas-14.0.0.tar.gz')},
+                     'neutron-fwaas-14.0.1.tar.gz')},
     'neutron-base-plugin-networking-ansible': {
         'type': 'url',
         'location': ('$tarballs_base/networking-ansible/'
@@ -596,7 +596,7 @@ SOURCES = {
     'neutron-base-plugin-vmware-nsx': {
         'type': 'url',
         'location': ('$tarballs_base/vmware-nsx/'
-                     'vmware-nsx-master.tar.gz')},
+                     'vmware-nsx-14.0.0.tar.gz')},
     'neutron-base-plugin-vpnaas-agent': {
         'type': 'url',
         'location': ('$tarballs_base/neutron-vpnaas/'
@@ -672,7 +672,7 @@ SOURCES = {
     'octavia-base': {
         'type': 'url',
         'location': ('$tarballs_base/octavia/'
-                     'octavia-4.1.0.tar.gz')},
+                     'octavia-4.1.1.tar.gz')},
     'panko-base': {
         'type': 'url',
         'location': ('$tarballs_base/panko/'
