@@ -96,6 +96,7 @@ SKIPPED_IMAGES = {
     ],
     'centos+source': [
         "ovsdpdk",
+        "searchlight-base",
         # TODO(jeffrey4l): remove tripleo-ui when following bug is fixed
         # https://bugs.launchpad.net/tripleo/+bug/1744215
         "tripleo-ui"
@@ -133,6 +134,7 @@ SKIPPED_IMAGES = {
     'ubuntu+source': [
         # There is no qdrouterd package for ubuntu bionic
         "qdrouterd",
+        "searchlight-base",
         # TODO(jeffrey4l): remove tripleo-ui when following bug is fixed
         # https://bugs.launchpad.net/tripleo/+bug/1744215
         "tripleo-ui"
@@ -168,6 +170,7 @@ SKIPPED_IMAGES = {
     ],
     'debian+source': [
         "sensu-base",
+        "searchlight-base",
         "tripleo-ui"
     ],
     'oraclelinux+binary': [
@@ -190,6 +193,7 @@ SKIPPED_IMAGES = {
     'oraclelinux+source': [
         "bifrost-base",
         "ovsdpdk",
+        "searchlight-base",
         # TODO(jeffrey4l): remove tripleo-ui when following bug is fixed
         # https://bugs.launchpad.net/tripleo/+bug/1744215
         "tripleo-ui"
@@ -300,6 +304,11 @@ class PushIntoQueueTask(task.Task):
         self.success = True
 
 
+class PushError(Exception):
+    """Raised when there is a problem with pushing image to repository."""
+    pass
+
+
 class PushTask(DockerTask):
     """Task that pushes an image to a docker repository."""
 
@@ -323,6 +332,9 @@ class PushTask(DockerTask):
                                   ' have the correct privileges to run Docker'
                                   ' (root)')
             image.status = STATUS_CONNECTION_ERROR
+        except PushError as exception:
+            self.logger.error(exception)
+            image.status = STATUS_PUSH_ERROR
         except Exception:
             self.logger.exception('Unknown error when pushing')
             image.status = STATUS_PUSH_ERROR
@@ -347,8 +359,10 @@ class PushTask(DockerTask):
             if 'stream' in response:
                 self.logger.info(response['stream'])
             elif 'errorDetail' in response:
-                image.status = STATUS_ERROR
-                self.logger.error(response['errorDetail']['message'])
+                raise PushError(response['errorDetail']['message'])
+
+        # Reset any previous errors.
+        image.status = STATUS_BUILT
 
 
 class BuildTask(DockerTask):
@@ -663,6 +677,7 @@ class KollaWorker(object):
         else:
             self.namespace = conf.namespace
         self.base = conf.base
+        self.use_dumb_init = conf.use_dumb_init
         self.base_tag = conf.base_tag
         self.install_type = conf.install_type
         self.tag = conf.tag
@@ -866,6 +881,7 @@ class KollaWorker(object):
                       'base_image': self.conf.base_image,
                       'base_distro_tag': self.base_tag,
                       'base_arch': self.base_arch,
+                      'use_dumb_init': self.use_dumb_init,
                       'supported_distro_release': supported_distro_release,
                       'install_metatype': self.install_metatype,
                       'image_prefix': self.image_prefix,
@@ -1021,9 +1037,15 @@ class KollaWorker(object):
                     'status': status,
                 })
                 if self.conf.logs_dir and status == STATUS_ERROR:
-                    os.symlink("%s.log" % name,
-                               os.path.join(self.conf.logs_dir,
-                                            "000_FAILED_%s.log" % name))
+                    linkname = os.path.join(self.conf.logs_dir,
+                                            "000_FAILED_%s.log" % name)
+                    try:
+                        os.lstat(linkname)
+                        os.remove(linkname)
+                    except OSError:
+                        pass
+
+                    os.symlink("%s.log" % name, linkname)
 
         if self.image_statuses_unmatched:
             LOG.debug("=====================================")

@@ -75,6 +75,8 @@ RUN echo > /etc/apache2/ports.conf \
     && cp /usr/share/openstack-dashboard/openstack_dashboard/conf/*.json /etc/openstack-dashboard \
     && cp /usr/share/openstack-dashboard/manage.py /usr/bin/manage.py \
     && rm /etc/apache2/conf-enabled/openstack-dashboard.conf \
+    && rm /etc/openstack-dashboard/local_settings.py \
+    && ln -s /etc/openstack-dashboard/local_settings /etc/openstack-dashboard/local_settings.py \
     && for locale in /usr/lib/python2.7/site-packages/*/locale; do \
            (cd ${locale%/*} && /usr/bin/python /usr/bin/manage.py compilemessages) \
        done
@@ -128,7 +130,9 @@ ADD plugins-archive /
     '/plugins/*'
 ] %}
 
+# NOTE(hrw): to install horizon from unpacked sources we cannot have it in upper-constraints.txt
 RUN ln -s horizon-source/* horizon \
+    && sed -i /^horizon=/d /requirements/upper-constraints.txt \
     && {{ macros.install_pip(horizon_pip_packages | customizable("pip_packages")) }} \
     && mkdir -p /etc/openstack-dashboard \
     && cp -r /horizon/openstack_dashboard/conf/* /etc/openstack-dashboard/ \

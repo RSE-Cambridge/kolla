@@ -15,10 +15,12 @@ LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build
 
     {% set fluentd_packages = [
         'fluentd',
+        'gcc-c++',
         'hostname',
+        'make',
+        'ruby-devel',
         'rubygem-fluent-plugin-elasticsearch',
         'rubygem-fluent-plugin-grok-parser',
-        'rubygem-fluent-plugin-kubernetes_metadata_filter',
         'rubygem-fluent-plugin-rewrite-tag-filter',
         'rubygem-fluent-plugin-secure-forward'
     ] %}
@@ -28,6 +30,8 @@ LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build
     {% set fluentd_packages = [
         'g++',
         'make',
+        'ruby',
+        'ruby-dev',
         'td-agent'
     ] %}
 
@@ -56,11 +60,17 @@ RUN chmod 755 /usr/local/bin/kolla_extend_start
 {% block fluentd_plugins_install %}
 
 {% if base_distro in ['debian', 'ubuntu'] %}
+# NOTE(osmanlicilegi): fluentd has dropped support for ruby 2.3 and below at
+# the end of 2019 so we need to pin its version to 1.8.x.
+# NOTE(mgoddard): fluent-plugin-elasticsearch requires faraday, which from
+# 0.16.0 depends on Ruby 2.3, but td-agent provides its own older version of
+# Ruby.
     {% set fluentd_plugins = [
+        'fluentd:"<1.9.0"',
+        'faraday:"~>0.15.4"',
         'fluent-plugin-elasticsearch',
         'fluent-plugin-grep',
         'fluent-plugin-grok-parser:2.1.4',
-        'fluent-plugin-kubernetes_metadata_filter',
         'fluent-plugin-parser',
         'fluent-plugin-rewrite-tag-filter:2.0.0',
         'fluent-plugin-secure-forward',
@@ -68,6 +78,17 @@ RUN chmod 755 /usr/local/bin/kolla_extend_start
 {% endif %}
 
 {{ macros.install_fluent_plugins(fluentd_plugins | customizable("plugins")) }}
+
+# Build and install Fluentd output plugin for Monasca Log API
+ARG monasca_output_plugin_tag=0.1.0
+ARG monasca_output_plugin_url=https://github.com/monasca/fluentd-monasca/archive/$monasca_output_plugin_tag.tar.gz
+ADD $monasca_output_plugin_url /tmp/fluentd-monasca.tar.gz
+RUN tar -xvf /tmp/fluentd-monasca.tar.gz -C /tmp \
+    && cd /tmp/fluentd-monasca-* \
+    && gem build fluentd-monasca-output.gemspec \
+    && gem install fluentd-monasca-output-*.gem \
+    && {{ macros.install_fluent_plugins(['fluentd-monasca-output-*.gem'], chain=True) }} \
+    && rm -rf /tmp/fluentd*
 
 {% endblock %}
 
